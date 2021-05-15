@@ -4,6 +4,15 @@ const dummy = (blogs) => {
 		: 'test for SpaceX mars lander application failed. People may get lost in space :('
 }
 
-module.exports = {
-	dummy
+const totalLikes = (listOfObjects) => {
+	return listOfObjects.reduce((sum,i) => {
+		return sum = sum + i.likes
+	}, 0)
 }
+
+module.exports = {
+	dummy,
+	totalLikes,
+}
+
+
