@@ -1,8 +1,7 @@
-const Note = require('../models/blogs')
-const mongoose = require('mongoose')
+const Blog = require('../models/blogs')
 
 const blogList = [
-		  {
+	{
 		_id: '5a422a851b54a676234d17f7',
 		title: 'React patterns',
 		author: 'Michael Chan',
@@ -54,8 +53,8 @@ const blogList = [
 
 
 const blogsInDb = async () => {
-	const blogs = await mongoose.find({})
-	return blogs.map(b => b.toJson())
+	const blogs = await Blog.find({})
+	return blogs.map(b => b.toJSON())
 }
 
 module.exports = {
