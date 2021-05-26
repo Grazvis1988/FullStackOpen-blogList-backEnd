@@ -19,10 +19,32 @@ test('Is amount of blogs is correct', async () => {
 	expect(response.body).toHaveLength(helper.blogList.length)
 })
 
-test('verivication of id in database', async () => {
+test('verification of id in database', async () => {
 	const blogsAtStart = await helper.blogsInDb()
 	blogsAtStart.map(blog => expect(blog.id).toBeDefined())
 })
+
+test.only('A valid blog can be added', async () => {
+	const beforeStart = await helper.blogsInDb()
+	const newBlog = {
+		title: 'Hubabuba',
+		author: 'Grafas drakula',
+		url: 'http://www.pasilenk.lt',
+		likes: 100,
+	}
+	await api
+		.post('/api/blogs')
+		.send(newBlog)
+		.expect(200)
+		.expect('Content-Type', /application\/json/)
+	const afterEnd = await helper.blogsInDb()
+	expect(afterEnd).toHaveLength(beforeStart.length + 1)
+
+	const urlMatching  = afterEnd.map(b => b.url)
+	expect(urlMatching).toContain(newBlog.url)
+})
+
+
 
 afterAll( () => {
 	mongoose.connection.close()
