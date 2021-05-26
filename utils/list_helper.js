@@ -10,8 +10,8 @@ const totalLikes = (listOfObjects) => {
 	}, 0)
 }
 
-const favoritBlog = (listOfObjects) => {
-	const favoritBlog = listOfObjects.reduce((max, i) => {
+const favoriteBlog = (listOfObjects) => {
+	const favoriteBlog = listOfObjects.reduce((max, i) => {
 		if (i.likes > max.likes) {
 			max = {
 				title: i.title,
@@ -22,14 +22,65 @@ const favoritBlog = (listOfObjects) => {
 		return max
 	}, { likes: 0 })
 
-	console.log(favoritBlog)
-	return favoritBlog
+	return favoriteBlog
+}
+
+const mostBlogs = (blogList) => {
+	const listOfAuhors = blogList.reduce((authors, i) => {
+		(i.author in authors)
+			? authors[i.author]++
+			: authors[i.author] = 1
+		return authors
+	}, {})
+	console.log(listOfAuhors)
+
+	const mostBlogsAuthor = Object.entries(listOfAuhors).reduce((accumulator, i) => {
+		if (accumulator.blogs > i[1]) {
+			return {
+				author: accumulator.author,
+				blogs: accumulator.blogs
+			}
+		} else {
+			return {
+				author: i[0],
+				blogs: i[1]
+			}
+		}
+	}, {})
+
+	console.log(mostBlogsAuthor)
+
+	return mostBlogsAuthor
+}
+
+const mostLikes = (blogList) => {
+	const listOfAuhorsAndLikes = blogList.reduce((accumulator, i) => {
+		const index = accumulator.findIndex(obj => obj.author === i.author)
+
+		if(index !== -1) {
+			accumulator[index].likes += i.likes
+			return accumulator
+		}
+		else {
+			return accumulator.concat({ author: i.author, likes: i.likes })
+		}
+	}, [])
+	console.log(listOfAuhorsAndLikes)
+	return listOfAuhorsAndLikes.reduce((accumulator, i) => {
+		if (accumulator.likes > i.likes){
+			return { author: accumulator.author, likes: accumulator.likes }
+		} else {
+			return { author: i.author, likes: i.likes }
+		}
+	}, {})
 }
 
 module.exports = {
 	dummy,
 	totalLikes,
-	favoritBlog,
+	favoriteBlog,
+	mostBlogs,
+	mostLikes
 }
 
 
