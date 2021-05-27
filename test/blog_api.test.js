@@ -5,6 +5,7 @@ const api = supertest(app)
 const helper = require('./test_helper.js')
 const Blog  = require('../models/blogs')
 
+
 beforeEach( async () => {
 	await Blog.deleteMany({})
 	const blogObjects = helper.blogList.map( blog => new Blog(blog))
@@ -44,7 +45,7 @@ test('A valid blog can be added', async () => {
 	expect(urlMatching).toContain(newBlog.url)
 })
 
-test.only('likes defaults to zero', async () => {
+test('likes defaults to zero', async () => {
 	const newBlog = {
 		title: 'Karandash',
 		author: 'Arnoldas Shwartznegeris',
@@ -59,8 +60,31 @@ test.only('likes defaults to zero', async () => {
 	expect(blogFromDb.likes).toBe(0)
 })
 
+test('test for title and url properties missing', async () => {
+	const dummyBlog = {
+		//title: 'Rumba',
+		//url: 'http://www.kontrabanda.com',
+		author: 'Invisible man',
+		likes: 19834570193
+	}
+	await api.post('/api/blogs').send(dummyBlog).expect(400)
+	const afterEnd = await helper.blogsInDb()
+	const doesExist = afterEnd.find(b => b.author === dummyBlog.author && b.likes === dummyBlog.likes)
+	console.log(doesExist)
+	expect(doesExist).toBeUndefined()
+})
 
+test.only('test for deleting blog post', async () => {
+	const beforeAll = await helper.blogsInDb()
+	const BlogPostId = beforeAll[0].id
+	console.log(BlogPostId)
 
+	await api.delete(`/api/blogs/${BlogPostId}`).expect(204)
+	const afterAll = await helper.blogsInDb()
+	const listOfIds = afterAll.map(b => b.id)
+	expect(listOfIds).not.toContain(BlogPostId)
+
+})
 afterAll( () => {
 	mongoose.connection.close()
 })
