@@ -24,7 +24,7 @@ test('verification of id in database', async () => {
 	blogsAtStart.map(blog => expect(blog.id).toBeDefined())
 })
 
-test.only('A valid blog can be added', async () => {
+test('A valid blog can be added', async () => {
 	const beforeStart = await helper.blogsInDb()
 	const newBlog = {
 		title: 'Hubabuba',
@@ -42,6 +42,21 @@ test.only('A valid blog can be added', async () => {
 
 	const urlMatching  = afterEnd.map(b => b.url)
 	expect(urlMatching).toContain(newBlog.url)
+})
+
+test.only('likes defaults to zero', async () => {
+	const newBlog = {
+		title: 'Karandash',
+		author: 'Arnoldas Shwartznegeris',
+		url: 'http://www.linkomanija.net',
+	}
+
+	await api.post('/api/blogs').send(newBlog)
+		.expect(200).expect('Content-Type', /application\/json/)
+
+	const afterEnd = await helper.blogsInDb()
+	const blogFromDb = afterEnd.find(b => b.url === newBlog.url)
+	expect(blogFromDb.likes).toBe(0)
 })
 
 
