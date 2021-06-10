@@ -2,7 +2,7 @@ const blogsRouter = require('express').Router()
 const Blog = require('../models/blogs')
 
 blogsRouter.get('/', async (req, res) => {
-	const blogs = await Blog.find({})
+	const blogs = await Blog.find({}).populate('User', { url: 1, title: 1, author: 1, _id: 1 })
 	res.json(blogs.map(b => b.toJSON()))
 })
 
