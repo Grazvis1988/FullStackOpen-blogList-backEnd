@@ -48,8 +48,16 @@ blogsRouter.post('/', async (req, res) => {
 })
 
 blogsRouter.delete('/:id', async (req, res) => {
-	await Blog.findByIdAndRemove(req.params.id)
-	res.status(204).end()
+	const token = req.token
+	const decodedToken = jwt.verify(token, process.env.SECRET)
+	const blogToDelete = await Blog.findById(req.params.id)
+	if (blogToDelete.user.toString() === decodedToken.id.toString()) {
+		await Blog.findByIdAndRemove(req.params.id)
+		res.status(204).end()
+	} else {
+		res.status(401).send({ error: 'Only user who created listing can delete it' })
+	}
+
 })
 
 module.exports = blogsRouter
