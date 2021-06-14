@@ -53,9 +53,12 @@ blogsRouter.delete('/:id', async (req, res) => {
 	const blogToDelete = await Blog.findById(req.params.id)
 	if (blogToDelete.user.toString() === decodedToken.id.toString()) {
 		await Blog.findByIdAndRemove(req.params.id)
+		const user = await User.findById(decodedToken.id.toString())
+		user.blogs = user.blogs.filter( b => b !== req.params.id )
+		await user.save()
 		res.status(204).end()
 	} else {
-		res.status(401).send({ error: 'Only user who created listing can delete it' })
+		res.status(401).send({ error: 'Only user who created this blog listing can delete it' })
 	}
 
 })
