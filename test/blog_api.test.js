@@ -4,18 +4,42 @@ const app = require('../app')
 const api = supertest(app)
 const helper = require('./test_helper.js')
 const Blog  = require('../models/blogs')
+const User = require('../models/users')
+const bcrypt = require('bcrypt')
+const jwt = require('jsonwebtoken')
 
+//const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyTmFtZSI6IkFsZ2lzIiwiaWQiOiI2MGMzN2M4M2E2OTRkNmEyODU1NjMwNmQiLCJpYXQiOjE2MjM0MjQxOTF9.iNFXuZHtxfIARJt5qyjGextYXJkkF9p0sRTFDKSCVsI'
+
+let token
 
 beforeEach( async () => {
 	await Blog.deleteMany({})
-	const blogObjects = helper.blogList.map( blog => new Blog(blog))
+	await User.deleteMany({})
+	/*	const blogObjects = helper.blogList.map( blog => new Blog(blog))
+	const promiseArray = blogObjects.map( b => b.save() )
+	await Promise.all(promiseArray)
+*/
 
+	const user = new User({
+		userName: 'Mika',
+		name: 'Mika Hakinen',
+		passwordHash: await bcrypt.hash('1234', 12)
+	})
+
+	user.blogs = helper.blogList.map( b => user.blogs.concat(b._id) )
+	await user.save()
+	const userInDb = await User.findOne({ userName: 'Mika' })
+	//console.log(userId.toJSON())
+	const userInJson = userInDb.toJSON()
+	token = jwt.sign({ userName: userInJson.userName, id: userInJson.id }, process.env.SECRET)
+	const blogObjects = helper.blogList.map( b => (b.user = userInJson.id) && new Blog(b) )
 	const promiseArray = blogObjects.map( b => b.save() )
 	await Promise.all(promiseArray)
 })
 
 test('Is amount of blogs is correct', async () => {
 	const response = await api.get('/api/blogs')
+		.set('Authorization', `Bearer ${token}`)
 
 	expect(response.body).toHaveLength(helper.blogList.length)
 })
@@ -33,8 +57,10 @@ test('A valid blog can be added', async () => {
 		url: 'http://www.pasilenk.lt',
 		likes: 100,
 	}
+
 	await api
 		.post('/api/blogs')
+		.set('Authorization', `Bearer ${token}`)
 		.send(newBlog)
 		.expect(200)
 		.expect('Content-Type', /application\/json/)
@@ -52,7 +78,9 @@ test('likes defaults to zero', async () => {
 		url: 'http://www.linkomanija.net',
 	}
 
-	await api.post('/api/blogs').send(newBlog)
+	await api.post('/api/blogs')
+		.set('Authorization', `Bearer ${token}`)
+		.send(newBlog)
 		.expect(200).expect('Content-Type', /application\/json/)
 
 	const afterEnd = await helper.blogsInDb()
@@ -67,24 +95,42 @@ test('test for title and url properties missing', async () => {
 		author: 'Invisible man',
 		likes: 19834570193
 	}
-	await api.post('/api/blogs').send(dummyBlog).expect(400)
+	await api.post('/api/blogs')
+		.set('Authorization', `Bearer ${token}`)
+		.send(dummyBlog).expect(400)
 	const afterEnd = await helper.blogsInDb()
 	const doesExist = afterEnd.find(b => b.author === dummyBlog.author && b.likes === dummyBlog.likes)
 	console.log(doesExist)
 	expect(doesExist).toBeUndefined()
 })
 
-test.only('test for deleting blog post', async () => {
+test('test for deleting blog post', async () => {
 	const beforeAll = await helper.blogsInDb()
 	const BlogPostId = beforeAll[0].id
+	console.log(beforeAll[1])
 	console.log(BlogPostId)
 
-	await api.delete(`/api/blogs/${BlogPostId}`).expect(204)
+	await api.delete(`/api/blogs/${BlogPostId}`)
+		.set('Authorization', `Bearer ${token}`)
+		.expect(204)
 	const afterAll = await helper.blogsInDb()
 	const listOfIds = afterAll.map(b => b.id)
 	expect(listOfIds).not.toContain(BlogPostId)
 
 })
-afterAll( () => {
+
+test('Unauthorized token requets', async () => {
+	const dummyBlog = {
+		title: 'Bed',
+		author: 'Pillow Jackson',
+		url: 'http://www.blanket.eu',
+		likes: 10293458
+	}
+	await api.post('/api/blogs/')
+		.set('Authorization', 'Bearer wakamakafo')
+		.expect(401)
+})
+
+afterAll( async () => {
 	mongoose.connection.close()
 })
